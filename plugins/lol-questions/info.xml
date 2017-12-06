@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<c2addon>
+	<type>plugin</type>
+
+	<name>lol-questions</name>
+	<version>1.1</version>
+	<author>CT Arrington</author>
+	<website>www.legendsoflearning.com</website>
+	<documentation>https://docs.legendsoflearning.com/</documentation>
+	<description>Allows your game to get questions from the LoL platform and submit answers. Release 1.1 adds support for very basic HTML markup by converting it to bbcode.</description>
+</c2addon>
