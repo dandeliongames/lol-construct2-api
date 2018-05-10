@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<c2addon>
+	<type>plugin</type>
+
+	<name>LoL V2 API</name>
+	<version>2.12</version>
+	<author>Dan Kavanaugh</author>
+	<website>www.dandeliongames.com</website>
+	<documentation>https://community.legendsoflearning.com/discussion/1571/construct-2-api-now-available#latest</documentation>
+	<description>Construct 2 integration with the LoL Platform.</description>
+</c2addon>
