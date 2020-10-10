@@ -4,7 +4,6 @@
 assert2(cr, "cr namespace not created");
 assert2(cr.plugins_, "cr.plugins_ not created");
 
-
 const dummyAlternatives = [
   { text: 'blu<b>e</b>', alternativeId: '1' },
   { text: 'gr<i>e</i>en', alternativeId: '2' },
@@ -22,6 +21,16 @@ const dummyQuestion = {
   imageURL: null
 };
 
+const EVENT = {
+	RECEIVED: {
+		PAUSE: 'pause',
+		RESUME: 'resume',
+		QUESTIONS: 'questions',
+		LANGUAGE: 'language',
+		START: 'start',
+		INIT: 'init'
+	}
+};
 
 /////////////////////////////////////
 // Plugin class
@@ -38,7 +47,7 @@ cr.plugins_.LoLv2 = function(runtime)
 	// *** CHANGE THE PLUGIN ID HERE *** - must match the "id" property in edittime.js
 	//                            vvvvvvvv
 	var pluginProto = cr.plugins_.LoLv2.prototype;
-		
+
 	/////////////////////////////////////
 	// Object type class
 	pluginProto.Type = function(plugin)
@@ -51,7 +60,7 @@ cr.plugins_.LoLv2 = function(runtime)
 	var self;
 	var langData = {
 		lang : {} //Storage for the language json file.
-	}
+	};
 	var rawQuestions;
 	var currentQuestion;
 	var currentQuestionIndex;
@@ -67,47 +76,50 @@ cr.plugins_.LoLv2 = function(runtime)
 	{
 		this.type = type;
 		this.runtime = type.runtime;
-		
+
 		this.rawQuestions = [];
 		this.rawQuestions.push(dummyQuestion);
-    
+
 		this.currentQuestionIndex = 0;
 		this.currentQuestion = dummyQuestion;
-		
+
 		self = this;
-		
+
 		//alert('This works');
 		// note the object is sealed after this call; ensure any properties you'll ever need are set on the object
 		// e.g...
 		// this.myValue = 0;
 		window.addEventListener("message", function (msg) {
 			// Message name and JSONified payload
+			console.log('Received message: ', msg);
+
 			const { messageName, payload } = msg.data;
-			//alert('Received: '+msg.data.messageName+' : '+msg.data.payload);
-			if (msg.data.messageName == "language") {
-				langData.lang = JSON.parse(msg.data.payload);
-				self.runtime.trigger(cr.plugins_.LoLv2.prototype.cnds.OnLanguage, self);
-			}
-			if (msg.data.messageName == "questions") {
-				//langData.lang = JSON.parse(msg.data.payload);
-				var tq = JSON.parse(msg.data.payload);
-				
-				propagateQuestions(tq.questions);
-				
-				self.runtime.trigger(cr.plugins_.LoLv2.prototype.cnds.OnQuestions, self);
-			}
-			if (msg.data.messageName == "pause") {
-				self.runtime.trigger(cr.plugins_.LoLv2.prototype.cnds.OnPause, self);
-			}
-			if (msg.data.messageName == "resume") {
-				self.runtime.trigger(cr.plugins_.LoLv2.prototype.cnds.OnResume, self);
+
+			switch (messageName) {
+				case EVENT.RECEIVED.LANGUAGE:
+					langData.lang = JSON.parse(payload);
+					self.runtime.trigger(cr.plugins_.LoLv2.prototype.cnds.OnLanguage, self);
+					break;
+				case EVENT.RECEIVED.QUESTIONS:
+					const tq = JSON.parse(payload);
+					propagateQuestions(tq.questions);
+					self.runtime.trigger(cr.plugins_.LoLv2.prototype.cnds.OnQuestions, self);
+					break;
+				case EVENT.RECEIVED.PAUSE:
+					self.runtime.trigger(cr.plugins_.LoLv2.prototype.cnds.OnPause, self);
+					break;
+				case EVENT.RECEIVED.RESUME:
+					self.runtime.trigger(cr.plugins_.LoLv2.prototype.cnds.OnResume, self);
+					break;
+				default:
+					console.log('Unknown message: ' + msg);
 			}
 		});
-		
+
 		// any other properties you need, e.g...
 		// this.myValue = 0;
 	};
-	
+
 	//from lol v1 api
 	function splitStems(questions) {
 		for (var ctr=0; ctr<questions.length; ctr++) {
@@ -134,33 +146,33 @@ cr.plugins_.LoLv2 = function(runtime)
 		self.currentQuestion = rawQuestions[0];
 		//self.runtime.trigger(cr.plugins_.LoLQuestions.prototype.cnds.OnQuestions, self);
 	}
-	
+
 	function LoLApi (messageName, payloadObj) {
 		parent.postMessage({
 			message: messageName,
 			payload: JSON.stringify(payloadObj)
-		}, 
+		},
 		'*');
-		
+
 	}
 
 	var instanceProto = pluginProto.Instance.prototype;
-	
+
 //	var self;
-	
+
 
 	// called whenever an instance is created
 	instanceProto.onCreate = function()
 	{
 	};
-	
+
 	// called whenever an instance is destroyed
 	// note the runtime may keep the object after this call for recycling; be sure
 	// to release/recycle/reset any references to other objects in this function.
 	instanceProto.onDestroy = function ()
 	{
 	};
-	
+
 	// called when saving the full state of the game
 	instanceProto.saveToJSON = function ()
 	{
@@ -172,7 +184,7 @@ cr.plugins_.LoLv2 = function(runtime)
 			//"myValue": this.myValue
 		};
 	};
-	
+
 	// called when loading the full state of the game
 	instanceProto.loadFromJSON = function (o)
 	{
@@ -182,19 +194,19 @@ cr.plugins_.LoLv2 = function(runtime)
 		// note you MUST use double-quote syntax (e.g. o["property"]) to prevent
 		// Closure Compiler renaming and breaking the save format
 	};
-	
+
 	// only called if a layout object - draw to a canvas 2D context
 	instanceProto.draw = function(ctx)
 	{
 	};
-	
+
 	// only called if a layout object in WebGL mode - draw to the WebGL context
 	// 'glw' is not a WebGL context, it's a wrapper - you can find its methods in GLWrap.js in the install
 	// directory or just copy what other plugins do.
 	instanceProto.drawGL = function (glw)
 	{
 	};
-	
+
 	// The comments around these functions ensure they are removed when exporting, since the
 	// debugger code is no longer relevant after publishing.
 	/**BEGIN-PREVIEWONLY**/
@@ -213,13 +225,13 @@ cr.plugins_.LoLv2 = function(runtime)
 				// "html" (optional, default false): set to true to interpret the name and value
 				//									 as HTML strings rather than simple plain text
 				// "readonly" (optional, default false): set to true to disable editing the property
-				
+
 				// Example:
 				// {"name": "My property", "value": this.myValue}
 			]
 		});
 	};
-	
+
 	instanceProto.onDebugValueEdited = function (header, name, value)
 	{
 		// Called when a non-readonly property has been edited in the debugger. Usually you only
@@ -240,21 +252,21 @@ cr.plugins_.LoLv2 = function(runtime)
 		// return true if number is positive
 		return myparam >= 0;
 	};
-	
+
 	// ... other conditions here ...
-	
+
 	Cnds.prototype.OnLanguage = function ()
 	{
 		//I don't think this needs to do anything
 		return true;
 	};
-	
+
 	Cnds.prototype.OnQuestions = function ()
 	{
 		//I don't think this needs to do anything
 		return true;
 	};
-	
+
 	Cnds.prototype.OnPause = function ()
 	{
 		return true;
@@ -265,11 +277,11 @@ cr.plugins_.LoLv2 = function(runtime)
 		return true;
 	};
 
-	
-	
-	
+
+
+
 	pluginProto.cnds = new Cnds();
-	
+
 	//////////////////////////////////////
 	// Actions
 	function Acts() {};
@@ -279,7 +291,7 @@ cr.plugins_.LoLv2 = function(runtime)
 	{
 		LoLApi('loadingProgress', { progress: prog });
 	};
-	
+
 	Acts.prototype.CompleteGame = function ()
 	{
 		LoLApi('complete', {});
@@ -288,15 +300,15 @@ cr.plugins_.LoLv2 = function(runtime)
 	{
 		LoLApi('progress', {currentProgress : prog, maximumProgress : mprog, score : score });
 	};
-	
-	
-	
+
+
+
 	Acts.prototype.GetLanguageValue = function (ret,key) {
 		ret.set_string(langData.lang[key])
 	};
-	
+
 	// ... other actions here ...
-	
+
 	//Copied from LoL v1 API
   Acts.prototype.SubmitAnswer = function (alternativeId)
   {
@@ -309,23 +321,23 @@ cr.plugins_.LoLv2 = function(runtime)
 		this.currentQuestion = this.rawQuestions[this.currentQuestionIndex];
   };
 		//end of copied from lol v1 api
-		
+
 	Acts.prototype.SpeakText = function (key) {
 		LoLApi('speakText', { key: key });
 	};
-		
+
 	Acts.prototype.PlaySound = function (filename,looping,background) {
 		LoLApi('playSound', { file: filename,looping: looping,backround: background});
 	};
-		
+
 	Acts.prototype.StopSound = function (filename) {
 		LoLApi('stopSound', { file: filename});
 	};
-		
+
 	Acts.prototype.ConfigureSound = function (foreground,background,fade) {
 		LoLApi('configureSound', { foreground: 0.6, background: 0.5, fade: 0.2 });
 	};
-	
+
 	Acts.prototype.SpeakQuestion = function (questionId) {
 		LoLApi('speakQuestion', { questionId: questionId });
 	};
@@ -335,32 +347,32 @@ cr.plugins_.LoLv2 = function(runtime)
 	};
 
 	Acts.prototype.SpeakQuestionAndAnswers = function (questionId) {
-		LoLApi('speakQuestionAndAlternatives', { questionId: questionId });	
+		LoLApi('speakQuestionAndAlternatives', { questionId: questionId });
 	};
-	
+
 	Acts.prototype.GameIsReady = function (aspectRatio = "16:9",resolution = "1024x576") {
-		LoLApi('gameIsReady', { 
+		LoLApi('gameIsReady', {
 			aspectRatio: aspectRatio,
 			resolution: resolution
 		});
 	};
-	
-		
-		
+
+
+
 	pluginProto.acts = new Acts();
-	
+
 	//////////////////////////////////////
 	// Expressions
 	function Exps() {};
-	
+
 	// the example expression
-	
+
 	Exps.prototype.GetLanguageValue = function (ret,key) {
 		//Alert(key+' with '+ langData.lang[key]);
 		ret.set_string(""+langData.lang[key]);
 	};
 	// ... other expressions here ...
-	
+
 	//Copied from the v1 api
 	Exps.prototype.RawQuestions = function (ret)
 	{
@@ -449,7 +461,7 @@ cr.plugins_.LoLv2 = function(runtime)
 		ret.set_string(""+this.currentQuestion.correctAlternativeId);
 	};
 		//end of copied from v1 api
-	
+
 	pluginProto.exps = new Exps();
 
 }());
